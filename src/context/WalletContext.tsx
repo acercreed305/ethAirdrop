@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { ethers } from 'ethers';
 import Web3Modal from 'web3modal';
+import WalletConnectProvider from '@walletconnect/web3-provider';
 
 interface WalletContextType {
   account: string | null;
@@ -25,9 +26,26 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const connect = async () => {
     try {
       setIsConnecting(true);
+      
+      // Configure WalletConnect provider
+      const providerOptions = {
+        walletconnect: {
+          package: WalletConnectProvider,
+          options: {
+            infuraId: process.env.REACT_APP_INFURA_ID, // You'll need to add your Infura ID
+            rpc: {
+              1: 'https://mainnet.infura.io/v3/' + process.env.REACT_APP_INFURA_ID,
+              // Add other networks as needed
+            },
+            chainId: 1, // Mainnet by default
+          },
+        },
+      };
+
       const web3Modal = new Web3Modal({
         cacheProvider: true,
-        providerOptions: {},
+        providerOptions,
+        disableInjectedProvider: false, // Allow injected providers (like MetaMask Mobile)
       });
 
       const connection = await web3Modal.connect();
