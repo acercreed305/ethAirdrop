@@ -32,10 +32,17 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         walletconnect: {
           package: WalletConnectProvider,
           options: {
-            infuraId: process.env.REACT_APP_INFURA_ID, // You'll need to add your Infura ID
+            projectId: process.env.REACT_APP_WALLETCONNECT_PROJECT_ID, // You'll need to add your WalletConnect Project ID
+            metadata: {
+              name: 'ETH Airdrop',
+              description: 'ETH Airdrop Platform',
+              url: window.location.origin,
+              icons: [`${window.location.origin}/logo192.png`]
+            },
             rpc: {
-              1: 'https://mainnet.infura.io/v3/' + process.env.REACT_APP_INFURA_ID,
-              // Add other networks as needed
+              1: `https://mainnet.infura.io/v3/${process.env.REACT_APP_INFURA_ID}`,
+              5: `https://goerli.infura.io/v3/${process.env.REACT_APP_INFURA_ID}`,
+              11155111: `https://sepolia.infura.io/v3/${process.env.REACT_APP_INFURA_ID}`
             },
             chainId: 1, // Mainnet by default
           },
