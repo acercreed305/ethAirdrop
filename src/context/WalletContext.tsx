@@ -1,10 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { ethers } from 'ethers';
-import { EthereumClient, w3mConnectors, w3mProvider } from '@web3modal/ethereum';
-import { Web3Modal } from '@web3modal/react';
-import { configureChains, createConfig, WagmiConfig, useAccount, useConnect, useDisconnect } from 'wagmi';
-import { mainnet, goerli, sepolia } from 'wagmi/chains';
-import { WalletConnectConnector } from 'wagmi/connectors/walletConnect';
+import WalletConnectProvider from '@walletconnect/ethereum-provider';
 
 // Add type declaration for window.ethereum
 declare global {
@@ -31,28 +27,20 @@ const WalletContext = createContext<WalletContextType>({
 
 export const useWallet = () => useContext(WalletContext);
 
+const projectId = process.env.REACT_APP_WALLETCONNECT_PROJECT_ID || '';
+
 export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [account, setAccount] = useState<string | null>(null);
   const [isConnecting, setIsConnecting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [walletConnectProvider, setWalletConnectProvider] = useState<WalletConnectProvider | null>(null);
 
-  // Configure chains
-  const chains = [mainnet, goerli, sepolia];
-  const projectId = process.env.REACT_APP_WALLETCONNECT_PROJECT_ID || '';
-
-  const { publicClient } = configureChains(chains, [
-    w3mProvider({
-      projectId,
-    }),
-  ]);
-
-  const wagmiConfig = createConfig({
-    autoConnect: true,
-    connectors: [
-      new WalletConnectConnector({
-        chains,
-        options: {
+  useEffect(() => {
+    const initWalletConnect = async () => {
+      try {
+        const provider = await WalletConnectProvider.init({
           projectId,
+          chains: [1], // Mainnet
           showQrModal: true,
           metadata: {
             name: 'ETH Airdrop',
@@ -60,13 +48,15 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ childr
             url: window.location.origin,
             icons: [`${window.location.origin}/logo192.png`],
           },
-        },
-      }),
-    ],
-    publicClient,
-  });
+        });
+        setWalletConnectProvider(provider);
+      } catch (error) {
+        console.error('Failed to initialize WalletConnect:', error);
+      }
+    };
 
-  const ethereumClient = new EthereumClient(wagmiConfig, chains);
+    initWalletConnect();
+  }, []);
 
   const connect = async () => {
     try {
@@ -98,25 +88,32 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ childr
           console.error('MetaMask connection error:', error);
           throw new Error('Failed to connect to MetaMask');
         }
-      } else {
+      } else if (walletConnectProvider) {
         // If no injected provider, use WalletConnect
-        const connector = wagmiConfig.connectors[0];
-        if (connector) {
-          try {
-            // Connect using WalletConnect
-            const result = await connector.connect();
-            if (result.account) {
-              setAccount(result.account);
-            } else {
-              throw new Error('No account found after connection');
-            }
-          } catch (error: any) {
-            console.error('WalletConnect connection error:', error);
-            throw new Error('Failed to connect using WalletConnect');
-          }
-        } else {
-          throw new Error('No wallet connection method available');
+        try {
+          await walletConnectProvider.connect();
+          const provider = new ethers.providers.Web3Provider(walletConnectProvider);
+          const signer = provider.getSigner();
+          const address = await signer.getAddress();
+          setAccount(address);
+
+          walletConnectProvider.on('accountsChanged', (accounts: string[]) => {
+            setAccount(accounts[0] || null);
+          });
+
+          walletConnectProvider.on('chainChanged', () => {
+            window.location.reload();
+          });
+
+          walletConnectProvider.on('disconnect', () => {
+            setAccount(null);
+          });
+        } catch (error: any) {
+          console.error('WalletConnect connection error:', error);
+          throw new Error('Failed to connect using WalletConnect');
         }
+      } else {
+        throw new Error('No wallet connection method available');
       }
     } catch (error: any) {
       console.error('Error connecting wallet:', error);
@@ -127,6 +124,9 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   };
 
   const disconnect = () => {
+    if (walletConnectProvider) {
+      walletConnectProvider.disconnect();
+    }
     setAccount(null);
     setError(null);
   };
@@ -138,22 +138,8 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   }, []);
 
   return (
-    <WagmiConfig config={wagmiConfig}>
-      <WalletContext.Provider value={{ account, connect, disconnect, isConnecting, error }}>
-        {children}
-      </WalletContext.Provider>
-      <Web3Modal
-        projectId={projectId}
-        ethereumClient={ethereumClient}
-        themeMode="dark"
-        themeVariables={{
-          '--w3m-font-family': 'Roboto, sans-serif',
-          '--w3m-accent-color': '#3b82f6',
-        }}
-        defaultChain={mainnet}
-        enableNetworkView={true}
-        enableExplorer={true}
-      />
-    </WagmiConfig>
+    <WalletContext.Provider value={{ account, connect, disconnect, isConnecting, error }}>
+      {children}
+    </WalletContext.Provider>
   );
 }; 
