@@ -9,7 +9,7 @@ const Navbar: React.FC = () => {
   const { theme, toggleTheme } = useTheme();
 
   return (
-    <nav className="bg-white dark:bg-dark-secondary transition-colors duration-200">
+    <nav className="bg-white dark:bg-card-dark transition-colors duration-200 shadow">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16">
           <div className="flex">
@@ -39,7 +39,7 @@ const Navbar: React.FC = () => {
             {/* Theme Toggle Button */}
             <button
               onClick={toggleTheme}
-              className="p-2 rounded-lg bg-gray-100 dark:bg-dark-secondary hover:bg-gray-200 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="p-2 rounded-lg bg-gray-100 dark:bg-background-dark hover:bg-gray-200 dark:hover:bg-card-dark focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
             >
               {theme === 'dark' ? (
                 <svg className="w-5 h-5 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -61,7 +61,7 @@ const Navbar: React.FC = () => {
             {/* Theme Toggle Button (Mobile) */}
             <button
               onClick={toggleTheme}
-              className="p-2 rounded-lg bg-gray-100 dark:bg-dark-secondary hover:bg-gray-200 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="p-2 rounded-lg bg-gray-100 dark:bg-background-dark hover:bg-gray-200 dark:hover:bg-card-dark focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
             >
               {theme === 'dark' ? (
                 <svg className="w-5 h-5 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -76,7 +76,7 @@ const Navbar: React.FC = () => {
 
             <button
               onClick={() => setIsMenuOpen(!isMenuOpen)}
-              className="inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500"
+              className="inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 dark:hover:bg-background-dark focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500 transition-colors"
             >
               <span className="sr-only">Open main menu</span>
               {!isMenuOpen ? (
@@ -95,17 +95,17 @@ const Navbar: React.FC = () => {
 
       {/* Mobile menu */}
       {isMenuOpen && (
-        <div className="sm:hidden">
+        <div className="sm:hidden bg-white dark:bg-card-dark border-t border-gray-200 dark:border-gray-700">
           <div className="pt-2 pb-3 space-y-1">
             <Link
               to={ROUTES.DASHBOARD}
-              className="block pl-3 pr-4 py-2 border-l-4 border-transparent text-base font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 hover:border-blue-500 hover:text-blue-600 dark:hover:text-blue-400"
+              className="block pl-3 pr-4 py-2 border-l-4 border-transparent text-base font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-background-dark hover:border-blue-500 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
             >
               Dashboard
             </Link>
             <Link
               to={ROUTES.ABOUT}
-              className="block pl-3 pr-4 py-2 border-l-4 border-transparent text-base font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 hover:border-blue-500 hover:text-blue-600 dark:hover:text-blue-400"
+              className="block pl-3 pr-4 py-2 border-l-4 border-transparent text-base font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-background-dark hover:border-blue-500 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
             >
               About
             </Link>
@@ -119,4 +119,4 @@ const Navbar: React.FC = () => {
   );
 };
 
-export default Navbar; 
+export default Navbar;

@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
 import { ethers } from 'ethers';
 import WalletConnectProvider from '@walletconnect/ethereum-provider';
 
@@ -33,29 +33,40 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const [account, setAccount] = useState<string | null>(null);
   const [isConnecting, setIsConnecting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [walletConnectProvider, setWalletConnectProvider] = useState<WalletConnectProvider | null>(null);
+  const walletConnectProviderRef = useRef<WalletConnectProvider | null>(null);
 
   useEffect(() => {
-    const initWalletConnect = async () => {
-      try {
-        const provider = await WalletConnectProvider.init({
-          projectId,
-          chains: [1], // Mainnet
-          showQrModal: true,
-          metadata: {
-            name: 'ETH Airdrop',
-            description: 'ETH Airdrop Platform',
-            url: window.location.origin,
-            icons: [`${window.location.origin}/logo192.png`],
-          },
-        });
-        setWalletConnectProvider(provider);
-      } catch (error) {
-        console.error('Failed to initialize WalletConnect:', error);
+    if (!walletConnectProviderRef.current) {
+      const initWalletConnect = async () => {
+        try {
+          const provider = await WalletConnectProvider.init({
+            projectId,
+            chains: [1], // Mainnet
+            showQrModal: true,
+            metadata: {
+              name: 'ETH Airdrop',
+              description: 'ETH Airdrop Platform',
+              url: window.location.origin,
+              icons: [`${window.location.origin}/logo192.png`],
+            },
+          });
+          walletConnectProviderRef.current = provider;
+        } catch (error) {
+          console.error('Failed to initialize WalletConnect:', error);
+        }
+      };
+
+      initWalletConnect();
+    }
+
+    // Cleanup function
+    return () => {
+      if (walletConnectProviderRef.current) {
+        walletConnectProviderRef.current.removeListener('accountsChanged', () => {});
+        walletConnectProviderRef.current.removeListener('chainChanged', () => {});
+        walletConnectProviderRef.current.removeListener('disconnect', () => {});
       }
     };
-
-    initWalletConnect();
   }, []);
 
   const connect = async () => {
@@ -86,26 +97,30 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ childr
           });
         } catch (error: any) {
           console.error('MetaMask connection error:', error);
-          throw new Error('Failed to connect to MetaMask');
+          if (error.code === -32000 && error.message.includes("DApp requests are too frequent")) {
+            throw new Error("MetaMask: DApp requests are too frequent, please try again after a moment.");
+          } else {
+            throw new Error('Failed to connect to MetaMask');
+          }
         }
-      } else if (walletConnectProvider) {
+      } else if (walletConnectProviderRef.current) {
         // If no injected provider, use WalletConnect
         try {
-          await walletConnectProvider.connect();
-          const provider = new ethers.providers.Web3Provider(walletConnectProvider);
+          await walletConnectProviderRef.current.connect();
+          const provider = new ethers.providers.Web3Provider(walletConnectProviderRef.current);
           const signer = provider.getSigner();
           const address = await signer.getAddress();
           setAccount(address);
 
-          walletConnectProvider.on('accountsChanged', (accounts: string[]) => {
+          walletConnectProviderRef.current.on('accountsChanged', (accounts: string[]) => {
             setAccount(accounts[0] || null);
           });
 
-          walletConnectProvider.on('chainChanged', () => {
+          walletConnectProviderRef.current.on('chainChanged', () => {
             window.location.reload();
           });
 
-          walletConnectProvider.on('disconnect', () => {
+          walletConnectProviderRef.current.on('disconnect', () => {
             setAccount(null);
           });
         } catch (error: any) {
@@ -124,8 +139,8 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   };
 
   const disconnect = () => {
-    if (walletConnectProvider) {
-      walletConnectProvider.disconnect();
+    if (walletConnectProviderRef.current) {
+      walletConnectProviderRef.current.disconnect();
     }
     setAccount(null);
     setError(null);
