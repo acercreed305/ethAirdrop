@@ -1,9 +1,9 @@
-import { ethers } from 'ethers';
+import { ethers, BigNumberish } from 'ethers';
 
 export interface AirdropInfo {
-  totalClaimed: ethers.BigNumber;
-  availableRewards: ethers.BigNumber;
-  tasksCompleted: ethers.BigNumber;
+  totalClaimed: BigNumberish;
+  availableRewards: BigNumberish;
+  tasksCompleted: BigNumberish;
 }
 
 const AIRDROP_CONTRACT_ADDRESS = process.env.REACT_APP_AIRDROP_CONTRACT_ADDRESS || '';
