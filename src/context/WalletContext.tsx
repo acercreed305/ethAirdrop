@@ -69,64 +69,48 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     };
   }, []);
 
-  const connect = async () => {
+  const connectWallet = async () => {
     try {
       setIsConnecting(true);
       setError(null);
 
-      // Try to connect using window.ethereum first (MetaMask)
       if (window.ethereum) {
-        try {
-          // Request account access
-          await window.ethereum.request({ method: 'eth_requestAccounts' });
-          const provider = new ethers.providers.Web3Provider(window.ethereum);
-          const signer = provider.getSigner();
-          const address = await signer.getAddress();
-          setAccount(address);
+        const provider = new ethers.BrowserProvider(window.ethereum);
+        await provider.send("eth_requestAccounts", []);
+        const signer = await provider.getSigner();
+        const address = await signer.getAddress();
+        setAccount(address);
 
-          window.ethereum.on('accountsChanged', (accounts: string[]) => {
-            setAccount(accounts[0] || null);
-          });
+        window.ethereum.on('accountsChanged', (accounts: string[]) => {
+          setAccount(accounts[0] || null);
+        });
 
-          window.ethereum.on('chainChanged', () => {
-            window.location.reload();
-          });
+        window.ethereum.on('chainChanged', () => {
+          window.location.reload();
+        });
 
-          window.ethereum.on('disconnect', () => {
-            setAccount(null);
-          });
-        } catch (error: any) {
-          console.error('MetaMask connection error:', error);
-          if (error.code === -32000 && error.message.includes("DApp requests are too frequent")) {
-            throw new Error("MetaMask: DApp requests are too frequent, please try again after a moment.");
-          } else {
-            throw new Error('Failed to connect to MetaMask');
-          }
-        }
+        window.ethereum.on('disconnect', () => {
+          setAccount(null);
+        });
       } else if (walletConnectProviderRef.current) {
-        // If no injected provider, use WalletConnect
-        try {
-          await walletConnectProviderRef.current.connect();
-          const provider = new ethers.providers.Web3Provider(walletConnectProviderRef.current);
-          const signer = provider.getSigner();
-          const address = await signer.getAddress();
-          setAccount(address);
+        await walletConnectProviderRef.current.enable();
+        const provider = new ethers.BrowserProvider(walletConnectProviderRef.current);
+        const signer = await provider.getSigner();
+        const address = await signer.getAddress();
+        const network = await provider.getNetwork();
+        setAccount(address);
 
-          walletConnectProviderRef.current.on('accountsChanged', (accounts: string[]) => {
-            setAccount(accounts[0] || null);
-          });
+        walletConnectProviderRef.current.on('accountsChanged', (accounts: string[]) => {
+          setAccount(accounts[0] || null);
+        });
 
-          walletConnectProviderRef.current.on('chainChanged', () => {
-            window.location.reload();
-          });
+        walletConnectProviderRef.current.on('chainChanged', () => {
+          window.location.reload();
+        });
 
-          walletConnectProviderRef.current.on('disconnect', () => {
-            setAccount(null);
-          });
-        } catch (error: any) {
-          console.error('WalletConnect connection error:', error);
-          throw new Error('Failed to connect using WalletConnect');
-        }
+        walletConnectProviderRef.current.on('disconnect', () => {
+          setAccount(null);
+        });
       } else {
         throw new Error('No wallet connection method available');
       }
@@ -153,7 +137,7 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   }, []);
 
   return (
-    <WalletContext.Provider value={{ account, connect, disconnect, isConnecting, error }}>
+    <WalletContext.Provider value={{ account, connect: connectWallet, disconnect, isConnecting, error }}>
       {children}
     </WalletContext.Provider>
   );
