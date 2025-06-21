@@ -13,6 +13,7 @@ module.exports = function override(config) {
     "url": require.resolve("url/"),
     "buffer": require.resolve("buffer/"),
     "util": require.resolve("util/"),
+    "process": require.resolve("process/browser"),
   });
   config.resolve.fallback = fallback;
 
@@ -27,10 +28,10 @@ module.exports = function override(config) {
   // Ignore source map warnings for specific packages
   config.ignoreWarnings = [/Failed to parse source map/];
   
-  // Add alias for process
+  // Add alias for process/browser to fix ESM resolution
   config.resolve.alias = {
       ...(config.resolve.alias || {}),
-      'process': 'process/browser'
+      'process/browser': require.resolve('process/browser.js')
   };
 
   return config;
