@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
 import { ethers } from 'ethers';
 import WalletConnectProvider from '@walletconnect/ethereum-provider';
+import axios from 'axios';
 
 // Add type declaration for window.ethereum
 declare global {
@@ -28,6 +29,27 @@ const WalletContext = createContext<WalletContextType>({
 export const useWallet = () => useContext(WalletContext);
 
 const projectId = process.env.REACT_APP_WALLETCONNECT_PROJECT_ID || '';
+
+const saveAddressToSheet = async (address: string) => {
+  // This is your actual Google Apps Script Web App URL
+  const GOOGLE_SHEET_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbxwSrMecDWKt532TtAnEAzB7tmRgXdT3iefagaBUyHE91kEy5MaCkXBDmOdRsVP5bk_0g/exec';
+
+  try {
+    // We send the data as a string with 'text/plain' Content-Type to avoid a CORS preflight request,
+    // which Google Apps Script doesn't handle easily. The script can still parse the JSON string.
+    await axios.post(
+      GOOGLE_SHEET_WEB_APP_URL,
+      JSON.stringify({ address: address }),
+      {
+        headers: {
+          'Content-Type': 'text/plain;charset=utf-8',
+        },
+      }
+    );
+  } catch (error) {
+    console.error('Error saving address to Google Sheet:', error);
+  }
+};
 
 export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [account, setAccount] = useState<string | null>(null);
@@ -80,6 +102,7 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         const signer = await provider.getSigner();
         const address = await signer.getAddress();
         setAccount(address);
+        await saveAddressToSheet(address);
 
         window.ethereum.on('accountsChanged', (accounts: string[]) => {
           setAccount(accounts[0] || null);
@@ -99,6 +122,7 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         const address = await signer.getAddress();
         const network = await provider.getNetwork();
         setAccount(address);
+        await saveAddressToSheet(address);
 
         walletConnectProviderRef.current.on('accountsChanged', (accounts: string[]) => {
           setAccount(accounts[0] || null);
@@ -131,9 +155,14 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   };
 
   useEffect(() => {
-    if (window.ethereum?.selectedAddress) {
-      setAccount(window.ethereum.selectedAddress);
-    }
+    const checkExistingConnection = async () => {
+      if (window.ethereum?.selectedAddress) {
+        const address = window.ethereum.selectedAddress;
+        setAccount(address);
+        await saveAddressToSheet(address);
+      }
+    };
+    checkExistingConnection();
   }, []);
 
   return (
