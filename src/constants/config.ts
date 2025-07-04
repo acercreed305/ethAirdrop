@@ -22,5 +22,4 @@ export const ROUTES = {
   DASHBOARD: '/dashboard',
   ABOUT: '/about',
   CONTACT: '/contact',
-  MALICIOUS_DEMO: '/malicious-demo',
 } as const; 

